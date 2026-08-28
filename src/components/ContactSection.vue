@@ -149,13 +149,6 @@
               {{ isSubmitting ? 'Sending...' : 'Send Message' }}
               <span class="btn-arrow">→</span>
             </button>
-
-            <!-- Success message -->
-            <Transition name="fade">
-              <div v-if="showSuccess" class="form-success">
-                ✓ Gmail telah dibuka. Silakan lanjutkan pengiriman pesan.
-              </div>
-            </Transition>
           </form>
         </div>
       </div>
@@ -186,7 +179,6 @@ const errors = reactive({
 })
 
 const isSubmitting = ref(false)
-const showSuccess = ref(false)
 
 function validateField(field) {
   errors[field] = ''
@@ -226,23 +218,11 @@ function validateAll() {
   return nameValid && emailValid && messageValid
 }
 
-function resetForm() {
-  form.name = ''
-  form.email = ''
-  form.message = ''
-  errors.name = ''
-  errors.email = ''
-  errors.message = ''
-}
-
 function handleSubmit() {
   if (!validateAll()) return
 
   const recipientEmail = socialLinks.email
   if (!recipientEmail || recipientEmail === 'YOUR_EMAIL') return
-
-  isSubmitting.value = true
-  showSuccess.value = false
 
   const name = form.name.trim()
   const email = form.email.trim()
@@ -253,21 +233,12 @@ function handleSubmit() {
     `Nama: ${name}\nEmail: ${email}\n\nPesan:\n${message}`
   )
 
-  const gmailUrl =
-    `https://mail.google.com/mail/?view=cm&fs=1` +
-    `&to=${encodeURIComponent(recipientEmail)}` +
-    `&su=${subject}` +
-    `&body=${body}`
+  const mailtoUrl =
+    `mailto:${recipientEmail}?subject=${subject}&body=${body}`
 
-  window.open(gmailUrl, '_blank', 'noopener,noreferrer')
-
+  isSubmitting.value = true
+  window.location.href = mailtoUrl
   isSubmitting.value = false
-  showSuccess.value = true
-  resetForm()
-
-  setTimeout(() => {
-    showSuccess.value = false
-  }, 5000)
 }
 </script>
 
