@@ -153,14 +153,7 @@
             <!-- Success message -->
             <Transition name="fade">
               <div v-if="showSuccess" class="form-success">
-                ✓ Pesan berhasil dikirim. Terima kasih telah menghubungi saya!
-              </div>
-            </Transition>
-
-            <!-- Submit error message -->
-            <Transition name="fade">
-              <div v-if="submitError" class="form-submit-error">
-                {{ submitError }}
+                Email siap dikirim. Silakan lanjutkan pengiriman melalui aplikasi email Anda.
               </div>
             </Transition>
           </form>
@@ -172,12 +165,7 @@
 
 <script setup>
 import { ref, reactive } from 'vue'
-import emailjs from '@emailjs/browser'
 import BackgroundDecor from './BackgroundDecor.vue'
-
-const serviceId = import.meta.env.VITE_EMAILJS_SERVICE_ID
-const templateId = import.meta.env.VITE_EMAILJS_TEMPLATE_ID
-const publicKey = import.meta.env.VITE_EMAILJS_PUBLIC_KEY
 
 const socialLinks = reactive({
   email: 'ervinaksnnda@gmail.com',
@@ -199,7 +187,6 @@ const errors = reactive({
 
 const isSubmitting = ref(false)
 const showSuccess = ref(false)
-const submitError = ref('')
 
 function validateField(field) {
   errors[field] = ''
@@ -248,45 +235,33 @@ function resetForm() {
   errors.message = ''
 }
 
-async function handleSubmit() {
+function handleSubmit() {
   if (!validateAll()) return
+
+  const recipientEmail = socialLinks.email
+  if (!recipientEmail || recipientEmail === 'YOUR_EMAIL') return
 
   isSubmitting.value = true
   showSuccess.value = false
-  submitError.value = ''
 
-  if (!serviceId || !templateId || !publicKey) {
-    isSubmitting.value = false
-    submitError.value = 'Konfigurasi EmailJS belum lengkap. Silakan coba lagi nanti.'
-    return
-  }
+  const name = form.name.trim()
+  const email = form.email.trim()
+  const message = form.message.trim()
 
-  try {
-    await emailjs.send(
-      serviceId,
-      templateId,
-      {
-        from_name: form.name.trim(),
-        from_email: form.email.trim(),
-        message: form.message.trim(),
-        subject: 'Portfolio Contact Message'
-      },
-      { publicKey }
-    )
+  const subject = encodeURIComponent(`Portofolio Inquiry dari ${name}`)
+  const body = encodeURIComponent(
+    `Nama: ${name}\nEmail: ${email}\n\nPesan:\n${message}`
+  )
 
-    isSubmitting.value = false
-    showSuccess.value = true
-    resetForm()
+  window.location.href = `mailto:${recipientEmail}?subject=${subject}&body=${body}`
 
-    setTimeout(() => {
-      showSuccess.value = false
-    }, 5000)
-  } catch (error) {
-    console.error('EmailJS send failed:', error)
-    isSubmitting.value = false
+  isSubmitting.value = false
+  showSuccess.value = true
+  resetForm()
+
+  setTimeout(() => {
     showSuccess.value = false
-    submitError.value = 'Maaf, pesan belum dapat dikirim. Silakan coba lagi.'
-  }
+  }, 5000)
 }
 </script>
 
