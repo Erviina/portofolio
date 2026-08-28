@@ -153,7 +153,14 @@
             <!-- Success message -->
             <Transition name="fade">
               <div v-if="showSuccess" class="form-success">
-                ✓ Form berhasil divalidasi. Terima kasih telah menghubungi saya!
+                ✓ Pesan berhasil dikirim. Terima kasih telah menghubungi saya!
+              </div>
+            </Transition>
+
+            <!-- Submit error message -->
+            <Transition name="fade">
+              <div v-if="submitError" class="form-submit-error">
+                {{ submitError }}
               </div>
             </Transition>
           </form>
@@ -165,16 +172,13 @@
 
 <script setup>
 import { ref, reactive } from 'vue'
+import emailjs from '@emailjs/browser'
 import BackgroundDecor from './BackgroundDecor.vue'
 
-/**
- * Social Links
- *
- * Untuk menghubungkan contact form ke backend:
- * 1. Buat API endpoint (misalnya dengan PHP + MySQL)
- * 2. Ganti fungsi handleSubmit() dengan fetch/axios ke endpoint tersebut
- * 3. Handle response dari server
- */
+const serviceId = import.meta.env.VITE_EMAILJS_SERVICE_ID
+const templateId = import.meta.env.VITE_EMAILJS_TEMPLATE_ID
+const publicKey = import.meta.env.VITE_EMAILJS_PUBLIC_KEY
+
 const socialLinks = reactive({
   email: 'ervinaksnnda@gmail.com',
   github: 'https://github.com/Erviina',
@@ -195,6 +199,7 @@ const errors = reactive({
 
 const isSubmitting = ref(false)
 const showSuccess = ref(false)
+const submitError = ref('')
 
 function validateField(field) {
   errors[field] = ''
@@ -234,27 +239,54 @@ function validateAll() {
   return nameValid && emailValid && messageValid
 }
 
+function resetForm() {
+  form.name = ''
+  form.email = ''
+  form.message = ''
+  errors.name = ''
+  errors.email = ''
+  errors.message = ''
+}
+
 async function handleSubmit() {
   if (!validateAll()) return
 
   isSubmitting.value = true
   showSuccess.value = false
+  submitError.value = ''
 
-  // Simulasi loading UI — validasi frontend saja, tanpa pengiriman ke server
-  await new Promise(resolve => setTimeout(resolve, 800))
+  if (!serviceId || !templateId || !publicKey) {
+    isSubmitting.value = false
+    submitError.value = 'Konfigurasi EmailJS belum lengkap. Silakan coba lagi nanti.'
+    return
+  }
 
-  isSubmitting.value = false
-  showSuccess.value = true
+  try {
+    await emailjs.send(
+      serviceId,
+      templateId,
+      {
+        from_name: form.name.trim(),
+        from_email: form.email.trim(),
+        message: form.message.trim(),
+        subject: 'Portfolio Contact Message'
+      },
+      { publicKey }
+    )
 
-  // Reset form
-  form.name = ''
-  form.email = ''
-  form.message = ''
+    isSubmitting.value = false
+    showSuccess.value = true
+    resetForm()
 
-  // Hide success message after 5s
-  setTimeout(() => {
+    setTimeout(() => {
+      showSuccess.value = false
+    }, 5000)
+  } catch (error) {
+    console.error('EmailJS send failed:', error)
+    isSubmitting.value = false
     showSuccess.value = false
-  }, 5000)
+    submitError.value = 'Maaf, pesan belum dapat dikirim. Silakan coba lagi.'
+  }
 }
 </script>
 
@@ -438,6 +470,17 @@ async function handleSubmit() {
   font-size: 0.875rem;
   font-weight: 500;
   border: 1px solid #A7F3D0;
+}
+
+.form-submit-error {
+  margin-top: 16px;
+  padding: 14px 18px;
+  background: #FEF2F2;
+  color: #991B1B;
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+  font-weight: 500;
+  border: 1px solid #FECACA;
 }
 
 /* Fade transition */
