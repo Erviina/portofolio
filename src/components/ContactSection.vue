@@ -153,7 +153,7 @@
             <!-- Success message -->
             <Transition name="fade">
               <div v-if="showSuccess" class="form-success">
-                Email siap dikirim. Silakan lanjutkan pengiriman melalui aplikasi email Anda.
+                ✓ Gmail telah dibuka. Silakan lanjutkan pengiriman pesan.
               </div>
             </Transition>
           </form>
@@ -253,7 +253,13 @@ function handleSubmit() {
     `Nama: ${name}\nEmail: ${email}\n\nPesan:\n${message}`
   )
 
-  window.location.href = `mailto:${recipientEmail}?subject=${subject}&body=${body}`
+  const gmailUrl =
+    `https://mail.google.com/mail/?view=cm&fs=1` +
+    `&to=${encodeURIComponent(recipientEmail)}` +
+    `&su=${subject}` +
+    `&body=${body}`
+
+  window.open(gmailUrl, '_blank', 'noopener,noreferrer')
 
   isSubmitting.value = false
   showSuccess.value = true
